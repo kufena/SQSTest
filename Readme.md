@@ -10,8 +10,6 @@ the database, and then attempt to remove the message from the queue, using the S
 NOTE: this project was initially created because I couldn't get the SQS lambda function to work.  It looked like it was timing out because of the await calls, but in fact, it was because
 I hadn't given it a long enough time out.  Also, I couldn't get either function to create any CloudWatch logs, but adding a policy to the Role in both templates fixed that.
 
-Any help in establishing what I am doing wrong would be gratefully received.
-
 To run, there are two serverless.template files, one per project, that depend on each other.  The command to run them is in the Readme.md of the respective projects.
 Move to the API project first and create the stack, then once complete, move to the SQS project and create the stack.  The API stack will display the URL to call,
 which if you call it in a browser, will add a message to the queue.  You can then use the AWS console to see what is happening.

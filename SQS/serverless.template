@@ -1,0 +1,113 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "SQSStack": {
+     "Type" : "String",
+     "Description": "stack name where we can get the sqs queue url"
+    }
+  },
+  "Resources": {
+    "OurTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "AttributeDefinitions" : [
+          {
+           "AttributeName" : "Key",
+           "AttributeType" : "S"
+          }
+        ],
+        "KeySchema" : [
+          {
+            "AttributeName" : "Key",
+            "KeyType" : "HASH"
+          }
+        ],
+        "TableName" : "SimpleSQSTestDB",
+        "ProvisionedThroughput" : {
+           "ReadCapacityUnits" : 5,
+           "WriteCapacityUnits" : 5
+         }
+      }
+    },
+    "OurRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+       "RoleName" : "SimpleSQSLambdaRole",
+       "Policies" : [
+         {
+           "PolicyName": "SimpleSQSLambdaRoleDBPolicy",
+           "PolicyDocument": {
+             "Version": "2012-10-17",
+             "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "*",
+                  "Resource": {"Fn::GetAtt": ["OurTable","Arn"]}
+                }
+            
+              ]
+            }
+         },
+         {
+           "PolicyName": "SimpleSQSLambdaRoleQueuePolicy",
+           "PolicyDocument": {
+             "Version": "2012-10-17",
+             "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "*",
+                  "Resource": {"Fn::ImportValue": {"Fn::Join": [":",[{"Ref":"SQSStack"},"SQSQueueArn"]]}}
+                }
+            
+              ]
+            }
+         }
+         ],
+        "AssumeRolePolicyDocument" : {
+          "Version": "2012-10-17",
+          "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                      ]
+        }
+      }
+    },
+    "OurFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri" : "",
+        "Role" : {"Fn::GetAtt": ["OurRole","Arn"]},
+        "Environment" : {
+           "Variables" : {
+              "QueueUrl": {"Fn::ImportValue": {"Fn::Join": [":",[{"Ref":"SQSStack"},"SQSQueue"]]}},
+              "TableName": {"Ref": "OurTable"}              
+           }
+        },
+        "Events" : { 
+           "SQS": {
+             "Type": "SQS",
+             "Properties" : { 
+                "Queue" : {"Fn::ImportValue": {"Fn::Join": [":",[{"Ref":"SQSStack"},"SQSQueueArn"]]}},
+                "Enabled" : true
+             }
+           }
+        },
+        "Handler" : "SQS::SQS.Function::FunctionHandler",
+        "Runtime" : "dotnet6",
+        "FunctionName" : "SimpleSQSLambdaFunction"
+      }
+    }
+  },
+  "Outputs": {
+  }
+}

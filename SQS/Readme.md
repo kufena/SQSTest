@@ -1,0 +1,1 @@
+dotnet lambda deploy-serverless -sb thegatehousewereham.home --stack-name SimpleSQS --template .\serverless.template --template-parameters 'SQSStack=SQSTestAPI'

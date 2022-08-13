@@ -1,0 +1,109 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Resources": {
+    "SQSQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName" : "SQSQueue"
+      }
+    },
+    "APIRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName" : "SimpleAPIRole",
+        "Policies": [       
+        {
+          "PolicyName": "APIRoleSQSPolicy",
+          "PolicyDocument": {
+		     "Version": "2012-10-17",
+             "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "*",
+                  "Resource": {"Fn::GetAtt": ["SQSQueue","Arn"]}
+                }
+            
+              ]
+            }
+          }
+        ]
+        ,
+        "AssumeRolePolicyDocument" : {
+          "Version": "2012-10-17",
+          "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                      ]
+        }
+      }
+    },
+    "MySimpleAPI": {
+      "Type": "AWS::Serverless::Api",
+      "Properties" : {
+       "Name" : "MySimpleAPI",
+       "StageName": "Prod",
+       "MethodSettings" : [
+         {
+            "ResourcePath": "/",
+            "HttpMethod": "GET"
+         }
+       ]
+      }
+    },
+    "APIFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+          "Handler": "API::API.Function::Get",
+            "Runtime": "dotnet6",
+            "CodeUri": "",
+            "MemorySize": 256,
+            "Timeout": 30,
+            "Role": { "Fn::GetAtt": ["APIRole", "Arn"] },
+            "Environment" : { "Variables": {"SQSUrl": {"Ref": "SQSQueue"}}},
+            "Events": {
+              "Get": {
+                "Type": "Api",
+                "Properties": {
+                  "Path": "/",
+                  "Method": "GET",
+                  "RestApiId" : {"Ref":"MySimpleAPI"}
+                }
+              }
+            }
+          }
+    }
+  },
+  "Outputs": {
+    "QueueURL": {
+      "Value": {"Ref": "SQSQueue"},
+      "Export": {
+        "Name": {"Fn::Join": [":", [{"Ref": "AWS::StackName"}, "SQSQueue"]]}
+      }
+    }, 
+    "QueueArn": {
+      "Value": {"Fn::GetAtt": ["SQSQueue","Arn"]},
+      "Export": {
+        "Name": {"Fn::Join": [":", [{"Ref": "AWS::StackName"}, "SQSQueueArn"]]}
+      }
+    },
+  "ApiURL": {
+      "Description": "API endpoint URL for Prod environment",
+      "Value": {
+        "Fn::Sub": "https://${MySimpleAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+      },
+      "Export": {
+        "Name": {"Fn::Join": [":", [{"Ref": "AWS::StackName"}, "APIUrl"]]}
+      }
+    }
+  }
+}

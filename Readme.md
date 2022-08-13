@@ -1,4 +1,4 @@
-## A simple test of C# Lambda serving an SQS queue.
+## A simple test of AWS Lambda serving an SQS queue, C#/Dotnet6.
 
 This is a simple test to establish whether SQS servicing works in dotnet6/C#.
 

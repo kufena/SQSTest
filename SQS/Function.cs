@@ -76,7 +76,6 @@ public class Function
 
         foreach (var message in input.Records)
         {
-            deletes.Add(new DeleteMessageBatchRequestEntry("", message.ReceiptHandle));
             string guid = message.Body;
             context.Logger.LogInformation($"Given guid {guid}");
             var myguid = Guid.NewGuid();
@@ -88,14 +87,17 @@ public class Function
             context.Logger.LogInformation($"Pushing Item to DB with Key {myguid} and value {guid}");
             var dbresp = await DbClient.PutItemAsync(TableName, keyValuePairs);
             context.Logger.LogInformation($"Pushed Item to DB with response http code of {dbresp.HttpStatusCode}");
-            var sqresp = await SqsClient.DeleteMessageAsync(new DeleteMessageRequest()
-                                                                {
-                                                                    QueueUrl = QueueUrl,
-                                                                    ReceiptHandle = message.ReceiptHandle
-                                                                });
-            context.Logger.LogInformation($"Deleted message from stream with http code {sqresp.HttpStatusCode}");
+
+            if (dbresp.HttpStatusCode == System.Net.HttpStatusCode.OK)
+            {
+                context.Logger.LogInformation($"Adding {guid} to messages to delete.");
+                deletes.Add(new DeleteMessageBatchRequestEntry(myguid.ToString(), message.ReceiptHandle));
+            }
         }
 
+        context.Logger.LogInformation($"Deleting {deletes.Count} messages from the queue.");
+        var sqsresp = await SqsClient.DeleteMessageBatchAsync(QueueUrl, deletes);
+        context.Logger.LogInformation($"Batch delete returned http code {sqsresp.HttpStatusCode}");
         context.Logger.LogInformation("Done.");
     }
 }

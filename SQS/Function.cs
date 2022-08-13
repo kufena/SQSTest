@@ -30,7 +30,7 @@ public class Function
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            //Console.WriteLine(ex.ToString());
             QueueUrl = "WobblyWrongDude";
         }
 
@@ -44,14 +44,14 @@ public class Function
         }
         catch (Exception xe)
         {
-            Console.WriteLine(xe.ToString());
+            //Console.WriteLine(xe.ToString());
             TableName = "FlobaLobbaWrongDude";
         }
 
         SqsClient = new AmazonSQSClient();
         DbClient = new AmazonDynamoDBClient();
-        Console.WriteLine($"{TableName} {QueueUrl}");
-        Console.WriteLine("Done constructor - now work.");
+        //Console.WriteLine($"{TableName} {QueueUrl}");
+        //Console.WriteLine("Done constructor - now work.");
     }
 
     /// <summary>

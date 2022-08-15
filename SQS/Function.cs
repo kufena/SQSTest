@@ -4,6 +4,8 @@ using Amazon.DynamoDBv2;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using Amazon.DynamoDBv2.Model;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -59,6 +61,16 @@ public class Function
     public async Task FunctionHandler(SQSEvent input, ILambdaContext context)
     {
         context.Logger.LogInformation($"TableName = {TableName} and QueueUrl = {QueueUrl}");
+
+        var allenv = Environment.GetEnvironmentVariables();
+        if (allenv == null) {
+            context.Logger.LogInformation("Null environment variable list.  so there.");
+        }
+        else {
+            var str = JsonSerializer.Serialize(allenv);
+            context.Logger.LogInformation($"Variable {str}");
+            
+        }
 
         if (input == null)
         {
